@@ -1,4 +1,4 @@
-ELK - Elastic Search, Logstash, Kibana
+NagiOS
 ======================================
 
 Overview of files:
@@ -6,7 +6,6 @@ Overview of files:
 
 This directory hold the following files:
 
-* ELKconfig.sh - This is the bash script for automaticly setting up the server.
+* NagiOSconfig.sh - This is the bash script for automatically setting up the server.
 * netplan.yaml - This is the network configuration file
-* Add others when nessesarry
-
+* Add others when necessary
