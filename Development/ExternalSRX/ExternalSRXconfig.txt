@@ -1,0 +1,301 @@
+## Last changed: 2018-12-02 17:58:02 UTC
+version 12.1X47-D15.4;
+system {
+    host-name ExternalSRX;
+    root-authentication {
+        encrypted-password "$1$9NyL1aFt$uvuYINqZQrpd1xY8pZKci0"; ## SECRET-DATA
+    }
+    login {
+        user jonatan {
+            uid 2000;
+            class super-user;
+            authentication {
+                encrypted-password "$1$4gaFxxXv$yyTYE.xT8e22JROg5u8O.1"; ## SECR                                   ET-DATA
+            }
+        }
+    }
+    services {
+        ssh;
+        web-management {
+            http {
+                interface ge-0/0/0.0;
+            }
+        }
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any any;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+    license {
+        autoupdate {
+            url https://ae1.juniper.net/junos/key_retrieval;
+        }
+    }
+}
+interfaces {
+    ge-0/0/0 {
+        description "MGNT INFRA";
+        unit 0 {
+            family inet {
+                address 172.16.2.1/29;
+            }
+        }
+    }
+    ge-0/0/1 {
+        description "To Internal SRX";
+        unit 0 {
+            family inet {
+                address 10.10.10.1/30;
+            }
+        }
+    }
+    ge-0/0/2 {
+        description "To DMZ Zone";
+        unit 0 {
+            family inet {
+                address 172.16.3.1/29;
+            }
+        }
+    }
+    ge-0/0/3 {
+        description "To Internet";
+        unit 0 {
+            family inet {
+                address 192.168.0.60/24;
+            }
+        }
+    }
+    lo0 {
+        unit 0 {
+            family inet {
+                address 100.100.0.1/32;
+            }
+        }
+    }
+}
+routing-options {
+    static {
+        route 0.0.0.0/0 next-hop 192.168.0.1;
+    }
+}
+protocols {
+    ospf {
+        area 0.0.0.0 {
+            interface ge-0/0/1.0;
+            interface ge-0/0/2.0;
+            interface ge-0/0/3.0;
+            interface lo0.0;
+        }
+    }
+}
+security {
+    nat {
+        destination {
+            pool SSH-Pool {
+                address 172.16.3.2/32 port 22;
+            }
+            pool ReverseWebProxy {
+                address 172.16.3.4/32;
+            }
+            pool SMTP-Server {
+                address 172.16.3.3/32;
+            }
+            rule-set SSH-Jumphost {
+                from zone untrust;
+                rule SSH-Rule {
+                    match {
+                        destination-address 192.168.0.60/32;
+                        destination-port {
+                            2222;
+                        }
+                    }
+                    then {
+                        destination-nat {
+                            pool {
+                                SSH-Pool;
+                            }
+                        }
+                    }
+                }
+                rule ReverseWebProxyRule {
+                    match {
+                        destination-address 192.168.0.60/32;
+                        destination-port {
+                            80;
+                        }
+                    }
+                    then {
+                        destination-nat {
+                            pool {
+                                ReverseWebProxy;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    policies {
+        from-zone trust to-zone untrust {
+            policy Trust-Untrust {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone trust to-zone dmz {
+            policy Trust-DMZ {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone trust to-zone trust {
+            policy Trust-Trust {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone untrust to-zone untrust {
+            policy Untrust-Untrust {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone untrust to-zone dmz {
+            policy Untrust-DMZ {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone untrust to-zone trust {
+            policy Untrust-Trust {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone dmz to-zone dmz {
+            policy DMZ-DMZ {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone dmz to-zone untrust {
+            policy DMZ-Untrust {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone dmz to-zone trust {
+            policy DMZ-Trust {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+    }
+    zones {
+        security-zone trust {
+            interfaces {
+                ge-0/0/1.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            all;
+                        }
+                        protocols {
+                            all;
+                        }
+                    }
+                }
+            }
+        }
+        security-zone untrust {
+            interfaces {
+                ge-0/0/3.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            all;
+                        }
+                        protocols {
+                            all;
+                        }
+                    }
+                }
+            }
+        }
+        security-zone dmz {
+            interfaces {
+                ge-0/0/2.0 {
+                    host-inbound-traffic {
+                        system-services {
+                            all;
+                        }
+                        protocols {
+                            all;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
