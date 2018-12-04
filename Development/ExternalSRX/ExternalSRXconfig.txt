@@ -1,4 +1,4 @@
-## Last changed: 2018-12-02 17:58:02 UTC
+## Last changed: 2018-12-05 00:07:15 UTC
 version 12.1X47-D15.4;
 system {
     host-name ExternalSRX;
@@ -10,7 +10,7 @@ system {
             uid 2000;
             class super-user;
             authentication {
-                encrypted-password "$1$4gaFxxXv$yyTYE.xT8e22JROg5u8O.1"; ## SECR                                   ET-DATA
+                encrypted-password "$1$4gaFxxXv$yyTYE.xT8e22JROg5u8O.1"; ## SECRET-DATA
             }
         }
     }
@@ -81,11 +81,6 @@ interfaces {
         }
     }
 }
-routing-options {
-    static {
-        route 0.0.0.0/0 next-hop 192.168.0.1;
-    }
-}
 protocols {
     ospf {
         area 0.0.0.0 {
@@ -99,18 +94,24 @@ protocols {
 security {
     nat {
         destination {
-            pool SSH-Pool {
+            pool sshpool {
                 address 172.16.3.2/32 port 22;
             }
-            pool ReverseWebProxy {
-                address 172.16.3.4/32;
+            pool librenms {
+                address 172.16.3.3/32 port 10005;
             }
-            pool SMTP-Server {
-                address 172.16.3.3/32;
+            pool nagios {
+                address 172.16.3.3/32 port 10006;
             }
-            rule-set SSH-Jumphost {
+            pool elk {
+                address 172.16.3.3/32 port 10007;
+            }
+            pool webserver {
+                address 172.16.3.3/32 port 10003;
+            }
+            rule-set portforwarding {
                 from zone untrust;
-                rule SSH-Rule {
+                rule sshjumphost {
                     match {
                         destination-address 192.168.0.60/32;
                         destination-port {
@@ -120,22 +121,22 @@ security {
                     then {
                         destination-nat {
                             pool {
-                                SSH-Pool;
+                                sshpool;
                             }
                         }
                     }
                 }
-                rule ReverseWebProxyRule {
+                rule librenms {
                     match {
                         destination-address 192.168.0.60/32;
                         destination-port {
-                            80;
+                            10005;
                         }
                     }
                     then {
                         destination-nat {
                             pool {
-                                ReverseWebProxy;
+                                librenms;
                             }
                         }
                     }
@@ -283,6 +284,9 @@ security {
             }
         }
         security-zone dmz {
+            address-book {
+                address jumphostexternal 172.16.3.2/32;
+            }
             interfaces {
                 ge-0/0/2.0 {
                     host-inbound-traffic {
