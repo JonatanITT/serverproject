@@ -3,7 +3,7 @@ Production
 
 All files in Production have gone through a GitLab pipeline to test all script, and they should now be ready to be packed by Packer and deployed
 
-This is the overview of all the files in each directory
+Files in directories
 -------------------------------------------------------
 
 *  JumphostExternal
